@@ -3,7 +3,7 @@ import time
 from typing import List
 from translator import translate_text, TranslationFailedError
 
-def translate_parallel(file_paths: List[str], api_key: str, target_lang: str, num_threads: int, model: str = "gpt-3.5-turbo", file_types: List[str] | None = None, mock_mode: bool = False) -> dict:
+def translate_parallel(file_paths: List[str], api_key: str, target_lang: str, num_threads: int, model: str = "gpt-3.5-turbo", file_types: List[str] | None = None, mock_mode: bool = False, total_files: int = 0, progress_queue=None) -> dict:
     """
     并行翻译多个文件，每个文件作为独立单元进行翻译。
     """
@@ -11,6 +11,7 @@ def translate_parallel(file_paths: List[str], api_key: str, target_lang: str, nu
     
     from utils import mock_mode_global
     mock_mode = mock_mode or mock_mode_global
+    total_files = len(file_paths) if total_files == 0 else total_files
     results = {}
     
     def translate_file_with_retry(path, content, max_retries=5):
@@ -54,8 +55,18 @@ def translate_parallel(file_paths: List[str], api_key: str, target_lang: str, nu
     
     with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
         future_to_path = {executor.submit(translate_file, path): path for path in file_paths}
+        completed_count = 0
         for future in concurrent.futures.as_completed(future_to_path):
             path, translated_content = future.result()
             results[path] = translated_content
+            completed_count += 1
+            if total_files > 1:
+                percentage = (completed_count / total_files * 100)
+                print(f"进度: {completed_count}/{total_files} 文件完成 ({percentage:.1f}%)")
+                if progress_queue:
+                    progress_queue.append({
+                        'progress': percentage,
+                        'message': f'进度: {completed_count}/{total_files} 文件完成 ({percentage:.1f}%)'
+                    })
     
     return results

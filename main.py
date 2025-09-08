@@ -115,7 +115,7 @@ def main():
             translated_text = input_text
         translation_results[file_paths[0]] = translated_text
     else:
-        translation_results = translate_parallel(file_paths, api_key, args.target_lang, num_threads, model, file_types, mock_mode_global)
+        translation_results = translate_parallel(file_paths, api_key, args.target_lang, num_threads, model, file_types, mock_mode_global, len(file_paths))
     
     # 统一写入输出（单/多文件）
     output_dir = args.output_dir or 'translated/'
@@ -136,8 +136,22 @@ def main():
         input_path = file_paths[0]
         translated_content = translation_results.get(input_path, '')
         base_name = os.path.basename(input_path)
-        name, ext = os.path.splitext(base_name)
-        output_path = os.path.join(output_dir, f"{name}_translated{ext}")
+        if args.input_dir:
+            # 计算相对路径，保持目录结构
+            rel_path = os.path.relpath(input_path, args.input_dir)
+            input_dir_basename = os.path.basename(args.input_dir)
+            rel_dir = os.path.dirname(f"{input_dir_basename}/{rel_path}")
+            name, ext = os.path.splitext(base_name)
+            translated_name = f"{name}_translated{ext}"
+            if rel_dir == '.':
+                output_path = os.path.join(output_dir, translated_name)
+            else:
+                output_subdir = os.path.join(output_dir, rel_dir)
+                os.makedirs(output_subdir, exist_ok=True)
+                output_path = os.path.join(output_subdir, translated_name)
+        else:
+            name, ext = os.path.splitext(base_name)
+            output_path = os.path.join(output_dir, f"{name}_translated{ext}")
         try:
             with open(output_path, 'w', encoding='utf-8') as f:
                 f.write(translated_content)
@@ -154,7 +168,8 @@ def main():
             else:
                 # 计算相对路径，保持目录结构
                 rel_path = os.path.relpath(input_path, args.input_dir)
-                rel_dir = os.path.dirname(rel_path)
+                input_dir_basename = os.path.basename(args.input_dir)
+                rel_dir = os.path.dirname(f"{input_dir_basename}/{rel_path}")
                 base_name = os.path.basename(input_path)
                 name, ext = os.path.splitext(base_name)
                 translated_name = f"{name}_translated{ext}"

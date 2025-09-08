@@ -1,2 +1,7 @@
 requests
 python-dotenv
+fastapi[all]
+uvicorn
+streamlit
+python-multipart
+slowapi
