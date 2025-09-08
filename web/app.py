@@ -91,8 +91,9 @@ def run_translation(paths, api_key, target_lang, num_threads, model, file_types,
         for i, (path, translated_content) in enumerate(results.items(), 1):
             try:
                 relpath = Path(path).relative_to(input_dir)
+                subdir = Path(input_dir).relative_to('test')
                 output_filename = f"{relpath.stem}_translated{relpath.suffix}"
-                output_path = Path(output_dir) / relpath.parent / output_filename
+                output_path = Path(output_dir) / subdir / relpath.parent / output_filename
                 output_path.parent.mkdir(parents=True, exist_ok=True)
                 with open(output_path, 'w', encoding='utf-8') as f:
                     f.write(translated_content)
