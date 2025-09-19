@@ -1,13 +1,15 @@
-import streamlit as st
-import requests
 import json
-import time
 import os
+import time
+
+import requests
+import streamlit as st
+
+from web.frontend_helpers import list_input_directories, progress_to_fraction
 
 st.title("翻译GUI")
 
-subdirs = [d for d in os.listdir('test') if os.path.isdir(os.path.join('test', d))]
-input_dir_options = [f"test/{d}" for d in subdirs]
+input_dir_options = list_input_directories("test")
 input_dir = st.selectbox("输入目录", options=input_dir_options)
 
 file_types = st.text_input("文件类型 (逗号分隔)", value="")
@@ -36,8 +38,10 @@ if st.button("开始翻译"):
             if "total_files" in data and total_files == 0:
                 total_files = data["total_files"]
             status_placeholder.write(data.get("message", ""))
-            if total_files > 1 and data.get("progress") is not None:
-                progress_placeholder.progress(min(data["progress"] / 100, 1.0))
+            if total_files >= 1:
+                fraction = progress_to_fraction(data.get("progress"))
+                if fraction is not None:
+                    progress_placeholder.progress(fraction)
             if "error" in data:
                 st.error(f"错误: {data['error']}")
                 completed = True

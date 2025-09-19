@@ -1,0 +1,2 @@
+"""Web front-end package."""
+
